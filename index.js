@@ -23,17 +23,17 @@ for (const file of commandFiles) {
 }
 
 client.once('ready', async () => {
-    console.log(`Bot đã sẵn sàng: ${client.user.tag}`);
+    console.log(`Bot is ready: ${client.user.tag}`);
     const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
     try {
-        console.log('Đang đăng ký slash commands...');
+        console.log('Registering slash commands...');
         await rest.put(
             Routes.applicationGuildCommands(process.env.CLIENT_ID, process.env.GUILD_ID),
             { body: commands }
         );
-        console.log('Đăng ký slash commands thành công!');
+        console.log('Successfully registered slash commands!');
     } catch (error) {
-        console.error('Lỗi khi đăng ký slash commands:', error);
+        console.error('Error registering slash commands:', error);
     }
 });
 
@@ -58,7 +58,7 @@ client.on('interactionCreate', async interaction => {
         await command.execute(interaction);
     } catch (error) {
         console.error(error);
-        await interaction.reply({ content: 'Lỗi khi thực thi lệnh!', ephemeral: true });
+        await interaction.reply({ content: 'Error executing command!', ephemeral: true });
     }
 });
 

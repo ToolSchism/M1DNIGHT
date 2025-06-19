@@ -1,32 +1,32 @@
 const { SlashCommandBuilder, EmbedBuilder, InteractionResponseFlags } = require('discord.js');
-// Import schema hoặc các module cần thiết
+// Import schema or necessary modules
 const UserData = require('../database/userSchema');
 
 module.exports = {
-    // Định nghĩa metadata của lệnh
+    // Define command metadata
     data: new SlashCommandBuilder()
-        .setName('help') // Tên lệnh
-        .setDescription('Mô tả lệnh'), // Mô tả ngắn gọn
+        .setName('help') // Command name
+        .setDescription('Display command information'), // Brief description
 
-    // Hàm xử lý lệnh
+    // Command execution function
     async execute(interaction) {
         try {
-            // Logic xử lý lệnh
+            // Command processing logic
 
-            // Tạo embed để trả lời
+            // Create embed for response
             const embed = new EmbedBuilder()
-                .setTitle('Tổng Hợp List Lệnh')
-                .setDescription("`/menu`: Xem tổng lệnh\n`/profile [user] [id]`: Xem thông tin của mình hoặc người khác\n`/assignall`: Gán DataID cho toàn bộ member (**CẤM CHẠY**)\n`/forceassign`: Bắt buộc gán DataID cho member (**CẤM CHẠY**)\n`/genrandom`: Random toàn bộ dữ liệu\n`/backup`: Xuất file .txt database (**CHẠY CUỐI TUẦN**)\n`/debuginfo`: Xuất số lượng member có DataID/ không có DataID ")
-                .setColor('#121416') // Màu embed
+                .setTitle('Command List Summary')
+                .setDescription("`/menu`: View all commands\n`/profile [user] [id]`: View your information or someone else's\n`/assignall`: Assign DataID to all members (**DO NOT RUN**)\n`/forceassign`: Force assign DataID to members (**DO NOT RUN**)\n`/genrandom`: Random select from all data\n`/backup`: Export database .txt file (**RUN ON WEEKENDS**)\n`/debuginfo`: Export count of members with/without DataID ")
+                .setColor('#121416') // Embed color
                 
 
-            // Trả lời interaction
+            // Reply to interaction
             await interaction.reply({ embeds: [embed] });
         } catch (error) {
-            // Xử lý lỗi
+            // Error handling
             console.error(error);
             const errorEmbed = new EmbedBuilder()
-                .setDescription('Đã có lỗi xảy ra!')
+                .setDescription('An error occurred!')
                 .setColor('#FF0000');
             await interaction.reply({ embeds: [errorEmbed], flags: InteractionResponseFlags.Ephemeral });
         }

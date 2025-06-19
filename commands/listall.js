@@ -4,48 +4,48 @@ const UserData = require('../database/userSchema');
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('listall')
-    .setDescription('Liệt kê username và DataID của tất cả người dùng trong database')
+    .setDescription('List username and DataID of all users in database')
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
     .addStringOption(option =>
       option
         .setName('sort')
-        .setDescription('Sắp xếp danh sách theo')
+        .setDescription('Sort list by')
         .setRequired(true)
         .addChoices(
           { name: 'A-Z', value: 'a-z' },
           { name: 'Z-A', value: 'z-a' },
-          { name: 'DataID dài đến ngắn', value: 'dataid-length-desc' },
-          { name: 'DataID ngắn đến dài', value: 'dataid-length-asc' }
+          { name: 'DataID long to short', value: 'dataid-length-desc' },
+          { name: 'DataID short to long', value: 'dataid-length-asc' }
         )
     ),
   async execute(interaction) {
     await interaction.deferReply({ ephemeral: true });
 
     try {
-      // Lấy guild
+      // Get guild
       const guild = interaction.guild || interaction.client.guilds.cache.get(process.env.GUILD_ID);
       if (!guild) {
         const errorEmbed = new EmbedBuilder()
           .setColor('#121416')
-          .setDescription('Không tìm thấy server!')
+          .setDescription('Server not found!')
           .setTimestamp();
         return interaction.editReply({ embeds: [errorEmbed] });
       }
 
-      // Lấy option sort
+      // Get sort option
       const sortOption = interaction.options.getString('sort');
 
-      // Lấy tất cả document từ UserData
+      // Get all documents from UserData
       const users = await UserData.find({});
       if (users.length === 0) {
         const embed = new EmbedBuilder()
           .setColor('#121416')
-          .setDescription('Không có người dùng nào trong database!')
+          .setDescription('No users found in database!')
           .setTimestamp();
         return interaction.editReply({ embeds: [embed] });
       }
 
-      // Sắp xếp users theo option
+      // Sort users by option
       let sortedUsers = [...users];
       switch (sortOption) {
         case 'a-z':
@@ -62,34 +62,33 @@ module.exports = {
           break;
       }
 
-
-      // Fetch thành viên để lấy displayName
+      // Fetch members to get displayName
       const members = await guild.members.fetch().catch(err => {
-        console.error(`[${new Date().toISOString()}] Lỗi khi fetch members:`, err);
+        console.error(`[${new Date().toISOString()}] Error fetching members:`, err);
         return new Map();
       });
       const memberMap = new Map(members.map(m => [m.id, m]));
 
-      // Phân trang: Mỗi trang tối đa 25 field
+      // Pagination: Maximum 25 fields per page
       const itemsPerPage = 25;
       const totalPages = Math.ceil(users.length / itemsPerPage);
       let currentPage = 0;
 
-      // Hàm tạo embed cho trang hiện tại
+      // Function to generate embed for current page
       const generateEmbed = (page) => {
         const start = page * itemsPerPage;
         const end = Math.min(start + itemsPerPage, sortedUsers.length);
         const embed = new EmbedBuilder()
           .setColor('#121416')
-          .setTitle(`Danh sách người dùng (Trang ${page + 1}/${totalPages})`)
-          .setDescription(`Sắp xếp: ${sortOption === 'a-z' ? 'A-Z' : sortOption === 'z-a' ? 'Z-A' : sortOption === 'dataid-length-desc' ? 'DataID dài đến ngắn' : 'DataID ngắn đến dài'}`)
-          .setFooter({ text: `Tổng cộng: ${users.length} người dùng` })
+          .setTitle(`User List (Page ${page + 1}/${totalPages})`)
+          .setDescription(`Sort: ${sortOption === 'a-z' ? 'A-Z' : sortOption === 'z-a' ? 'Z-A' : sortOption === 'dataid-length-desc' ? 'DataID long to short' : 'DataID short to long'}`)
+          .setFooter({ text: `Total: ${users.length} users` })
           .setTimestamp();
 
         const fields = sortedUsers.slice(start, end).map(user => {
           const member = memberMap.get(user.userId);
           return {
-          name: `@${user.username}`,
+            name: `@${user.username}`,
             value: `DataID: ${user.dataId}`,
             inline: true
           };
@@ -99,7 +98,7 @@ module.exports = {
         return embed;
       };
 
-      // Tạo buttons cho phân trang
+      // Create buttons for pagination
       const row = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
           .setCustomId('prev_page')
@@ -113,13 +112,13 @@ module.exports = {
           .setDisabled(currentPage === totalPages - 1)
       );
 
-      // Gửi embed đầu tiên
+      // Send first embed
       await interaction.editReply({
         embeds: [generateEmbed(currentPage)],
         components: totalPages > 1 ? [row] : []
       });
 
-      // Xử lý tương tác button
+      // Handle button interactions
       const filter = i => i.user.id === interaction.user.id && ['prev_page', 'next_page'].includes(i.customId);
       const collector = interaction.channel.createMessageComponentCollector({ filter, time: 60000 });
 
@@ -139,22 +138,22 @@ module.exports = {
             components: [row]
           });
         } catch (error) {
-          console.error(`[${new Date().toISOString()}] Lỗi khi xử lý button trong /list:`, error);
+          console.error(`[${new Date().toISOString()}] Error handling button in /listall:`, error);
         }
       });
 
       collector.on('end', () => {
         row.components.forEach(button => button.setDisabled(true));
         interaction.editReply({ components: [row] }).catch(() => {});
-        console.log(`[${new Date().toISOString()}] Collector ended for /list command`);
+        console.log(`[${new Date().toISOString()}] Collector ended for /listall command`);
       });
 
-      console.log(`[${new Date().toISOString()}] Đã hoàn thành lệnh /list bởi ${interaction.user.tag}`);
+      console.log(`[${new Date().toISOString()}] Completed /listall command by ${interaction.user.tag}`);
     } catch (error) {
-      console.error(`[${new Date().toISOString()}] Lỗi trong /list:`, error);
+      console.error(`[${new Date().toISOString()}] Error in /listall:`, error);
       const errorEmbed = new EmbedBuilder()
         .setColor('#121416')
-        .setDescription('Có lỗi xảy ra khi liệt kê người dùng!')
+        .setDescription('An error occurred while listing users!')
         .setTimestamp();
       await interaction.editReply({ embeds: [errorEmbed] });
     }

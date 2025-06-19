@@ -4,7 +4,7 @@ module.exports = {
   name: 'ready',
   once: true,
   execute(client) {
-    console.log(`Bot đã sẵn sàng: ${client.user.tag}`);
+    console.log(`Bot is ready: ${client.user.tag}`);
 
     client.user.setPresence({
       status: 'dnd',

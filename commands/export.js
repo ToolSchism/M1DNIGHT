@@ -5,37 +5,37 @@ const ExcelJS = require('exceljs');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('export')
-        .setDescription('Xuất toàn bộ dữ liệu người dùng thành file Excel (chỉ admin)')
+        .setDescription('Export all user data to Excel file (admin only)')
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
     async execute(interaction) {
-        // Defer phản hồi vì quá trình xuất file có thể mất thời gian
+        // Defer response as file export may take time
         await interaction.deferReply({ ephemeral: true });
 
         try {
-            // Lấy tất cả document từ collection UserData
+            // Get all documents from UserData collection
             const users = await UserData.find({}).lean();
 
             if (users.length === 0) {
                 const embed = new EmbedBuilder()
-                    .setDescription('Không có dữ liệu để xuất!')
+                    .setDescription('No data to export!')
                     .setColor('#FF0000');
                 return await interaction.editReply({ embeds: [embed], ephemeral: true });
             }
 
-            // Tạo workbook và worksheet
+            // Create workbook and worksheet
             const workbook = new ExcelJS.Workbook();
             workbook.creator = 'YourBot';
             workbook.created = new Date();
             const worksheet = workbook.addWorksheet('UserData');
 
-            // Định nghĩa cột
+            // Define columns
             worksheet.columns = [
                 { header: 'UserID', key: 'userId', width: 20 },
                 { header: 'Username', key: 'username', width: 30 },
                 { header: 'DataID', key: 'dataId', width: 15 }
             ];
 
-            // Thêm dữ liệu vào worksheet
+            // Add data to worksheet
             users.forEach(user => {
                 worksheet.addRow({
                     userId: user.userId,
@@ -44,27 +44,27 @@ module.exports = {
                 });
             });
 
-            // Định dạng header
+            // Format header
             worksheet.getRow(1).font = { bold: true };
             worksheet.getRow(1).alignment = { vertical: 'middle', horizontal: 'center' };
 
-            // Lưu file Excel vào buffer
+            // Save Excel file to buffer
             const buffer = await workbook.xlsx.writeBuffer();
 
-            // Tạo attachment
+            // Create attachment
             const attachment = new AttachmentBuilder(buffer, { name: `UserData_${new Date().toISOString().split('T')[0]}.xlsx` });
 
-            // Tạo embed thông báo
+            // Create notification embed
             const embed = new EmbedBuilder()
-                .setDescription('✅ Dữ liệu người dùng đã được xuất thành công!')
+                .setDescription('✅ User data has been exported successfully!')
                 .setColor('#121416');
 
-            // Gửi file và embed
+            // Send file and embed
             await interaction.editReply({ embeds: [embed], files: [attachment], ephemeral: true });
         } catch (error) {
-            console.error('Lỗi khi xuất file Excel:', error);
+            console.error('Error exporting Excel file:', error);
             const embed = new EmbedBuilder()
-                .setDescription('❌ Lỗi khi xuất dữ liệu. Vui lòng thử lại sau!')
+                .setDescription('❌ Error exporting data. Please try again later!')
                 .setColor('#FF0000');
             await interaction.editReply({ embeds: [embed], ephemeral: true });
         }
